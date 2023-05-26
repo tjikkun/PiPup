@@ -3,16 +3,22 @@ package nl.rogro82.pipup
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.util.Log
 import android.view.Gravity
 import android.view.View
-import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.WebView
 import android.widget.*
-import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.HttpException
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.load.model.GlideUrl
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
+
 
 // TODO: convert dimensions from px to dp
 
@@ -125,8 +131,31 @@ sealed class PopupView(context: Context, val popup: PopupProps) : LinearLayout(c
 
                 frame.addView(imageView, layoutParams)
 
-                Glide.with(context)
-                    .load(Uri.parse(media.uri))
+                val uri = GlideUrl(media.uri)
+                GlideApp.with(context)
+                    .load(uri)
+                    .timeout(20000)
+                    .listener(object : RequestListener<Drawable> {
+                        override fun onLoadFailed(p0: GlideException?, p1: Any?, p2: Target<Drawable>?, p3: Boolean): Boolean {
+                            Log.e(PiPupService.LOG_TAG, "onLoadFailed", p0)
+                            if(p0!=null){
+                                p0.logRootCauses(LOG_TAG)
+                                for (t in p0.causes) {
+                                    if (t is HttpException) {
+                                        Log.e(LOG_TAG, "Request failed due to HttpException!", t)
+                                        break
+                                    }
+                                }
+                            }
+                            //do something if error loading
+                            return false
+                        }
+                        override fun onResourceReady(p0: Drawable?, p1: Any?, p2: Target<Drawable>?, p3: DataSource?, p4: Boolean): Boolean {
+                            Log.d(PiPupService.LOG_TAG, "OnResourceReady")
+                            //do something when picture already loaded
+                            return false
+                        }
+                    })
                     .diskCacheStrategy(DiskCacheStrategy.NONE)
                     .skipMemoryCache(true)
                     .into(imageView)
