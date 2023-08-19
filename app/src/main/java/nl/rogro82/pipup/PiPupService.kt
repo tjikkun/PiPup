@@ -8,6 +8,7 @@ import android.graphics.PixelFormat
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import androidx.core.app.NotificationCompat
 import android.util.Log
 import android.view.Gravity
@@ -21,7 +22,7 @@ import java.io.File
 
 
 class PiPupService : Service(), WebServer.Handler {
-    private val mHandler: Handler = Handler()
+    private val mHandler: Handler = Handler(Looper.getMainLooper())
     private var mOverlay: FrameLayout? = null
     private var mPopup: PopupView? = null
     private lateinit var mWebServer: WebServer
