@@ -19,6 +19,7 @@ import android.widget.FrameLayout
 import fi.iki.elonen.NanoHTTPD
 import fi.iki.elonen.NanoHTTPD.newFixedLengthResponse
 import java.io.File
+import java.lang.Integer.max
 
 
 class PiPupService : Service(), WebServer.Handler {
@@ -251,6 +252,111 @@ class PiPupService : Service(), WebServer.Handler {
                                             title = title,
                                             titleSize = titleSize,
                                             titleColor = titleColor,
+                                            message = message,
+                                            messageSize = messageSize,
+                                            messageColor = messageColor,
+                                            media = media
+                                        )
+                                    }
+                                    else -> throw Exception("invalid content-type")
+                                }
+
+                                Log.d(LOG_TAG, "received popup: $popup")
+
+                                mHandler.post {
+                                    createPopup(popup)
+                                }
+
+                                OK("$popup")
+
+
+                            } catch (ex: Throwable) {
+                                Log.e(LOG_TAG, ex.message.toString())
+                                InvalidRequest(ex.message)
+                            }
+                        }
+                        "/" -> { //notification for androidtv compat
+                            try {
+                                val contentType = session.headers["content-type"] ?: APPLICATION_JSON
+                                val popup = when {
+                                    contentType.startsWith(APPLICATION_JSON) -> {
+
+                                        // try to handle it as json
+
+                                        val contentLength = session.headers["content-length"]?.toInt() ?: 0
+                                        val content = ByteArray(contentLength)
+
+                                        session.inputStream.read(content, 0, contentLength)
+
+                                        Json.readValue(content, PopupProps::class.java)
+                                            ?: throw Exception("failed to parse input")
+
+                                    }
+                                    contentType.startsWith(MULTIPART_FORM_DATA) -> {
+
+                                        val files = mutableMapOf<String, String>()
+                                        session.parseBody(files)
+
+                                        // flatten parameters
+
+                                        val params = session.parameters.mapValues { it.value.firstOrNull() }
+
+                                        val duration = params["duration"]?.toIntOrNull()
+                                            ?: PopupProps.DEFAULT_DURATION
+
+                                        var pos = params["position"]?.toIntOrNull() ?: 0
+                                        when (pos) { // Notification for androidtv has different order enum
+                                            0 -> pos = 2
+                                            1 -> pos = 3
+                                            2 -> pos = 0
+                                            3 -> pos = 1
+                                        }
+                                        val position = PopupProps.Position.values()[pos]
+
+                                        val backgroundColor = params["bkgcolor"]
+                                            ?: PopupProps.DEFAULT_BACKGROUND_COLOR
+
+                                        val title = params["title"]
+
+                                        val titleSize = params["titleSize"]?.toFloatOrNull()
+                                            ?: PopupProps.DEFAULT_TITLE_SIZE
+
+                                        val titleColor = params["titleColor"]
+                                            ?: PopupProps.DEFAULT_TITLE_COLOR
+
+                                        val message = params["msg"]
+
+                                        //TODO: fontsize
+                                        val alpha = when(params["transparency"]?.toIntOrNull()){
+                                            null -> PopupProps.DEFAULT_ALPHA
+                                            else -> max(0, 255 - (params["transparency"]!!.toInt() - 1) * 64)
+                                        }
+                                        val messageSize = params["messageSize"]?.toFloatOrNull()
+                                            ?: PopupProps.DEFAULT_TITLE_SIZE
+
+                                        val messageColor = params["messageColor"]
+                                            ?: PopupProps.DEFAULT_TITLE_COLOR
+
+                                        val media = when(val image = files["image"]) {
+                                            is String -> {
+                                                File(image).absoluteFile.let {
+                                                    val bitmap = BitmapFactory.decodeStream(it.inputStream())
+                                                    val imageWidth = params["imageWidth"]?.toIntOrNull() ?: PopupProps.DEFAULT_MEDIA_WIDTH
+
+                                                    PopupProps.Media.Bitmap(image = bitmap, width = imageWidth)
+                                                }
+                                            }
+                                            else -> null
+                                        }
+
+                                        PopupProps(
+                                            duration = duration,
+                                            position = position,
+                                            backgroundColor =  backgroundColor,
+                                            title = title,
+                                            titleSize = titleSize,
+                                            titleColor = titleColor,
+                                            alpha = alpha,
                                             message = message,
                                             messageSize = messageSize,
                                             messageColor = messageColor,

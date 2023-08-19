@@ -61,8 +61,24 @@ sealed class PopupView(context: Context, val popup: PopupProps) : LinearLayout(c
             message.textSize = popup.messageSize
             message.setTextColor(Color.parseColor(popup.messageColor))
         }
-
-        setBackgroundColor(Color.parseColor(popup.backgroundColor))
+        println(popup.alpha)
+        var col: UInt
+        col = Color.parseColor("#ffffff").toUInt()
+        println(col)
+        col = Color.parseColor("#ffffff").toUInt()
+        println(col)
+        col = Color.parseColor("#01ffffff").toUInt()
+        println(col)
+        col = Color.parseColor("#fffffffe").toUInt()
+        println(col)
+        col = Color.parseColor("#feffffff").toUInt()
+        println(col)
+        col = Color.parseColor("#ff000000").toUInt()
+        println(col)
+        col = Color.parseColor("#01000000").toUInt()
+        println(col)
+        setBackgroundColor(Color.parseColor(popup.backgroundColor)-((255 - popup.alpha) * 16777216))
+        //setAlpha(popup.alpha)
     }
 
     open fun destroy() {}

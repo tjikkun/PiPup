@@ -10,6 +10,7 @@ data class PopupProps(
     val title: String? = null,
     val titleSize: Float = 14f,
     val titleColor: String = DEFAULT_TITLE_COLOR,
+    val alpha: Int = DEFAULT_ALPHA,
     val message: String? = null,
     val messageSize: Float = DEFAULT_MESSAGE_SIZE,
     val messageColor: String = DEFAULT_MESSAGE_COLOR,
@@ -43,6 +44,7 @@ data class PopupProps(
         const val DEFAULT_BACKGROUND_COLOR = "#CC000000"
         const val DEFAULT_TITLE_SIZE = 16f
         const val DEFAULT_TITLE_COLOR = "#ffffff"
+        const val DEFAULT_ALPHA = 255
         const val DEFAULT_MESSAGE_SIZE = 12f
         const val DEFAULT_MESSAGE_COLOR = "#ffffff"
         const val DEFAULT_MEDIA_WIDTH = 480
